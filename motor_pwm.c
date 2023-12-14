@@ -2,22 +2,26 @@
 #include <msp430.h>
 #include <inttypes.h>
 
+#ifndef enableTimer(tx, ccr0)
+#define enableTimer(tx, ccr0) T##tx##CTL = TASSEL__ACLK | ID__1 | MC__UP | TACLR; T##tx##CCR0=ccr0
+#endif
+
+#ifndef enablePinAsTimerOutput(px,py,txn,tchn, ccrn)
+#define enablePinAsTimerOutput(px,py,txn,tchn, ccrn)        \
+    P##px##DIR |= BIT##py;                                  \
+    P##px##SEL |= BIT##py;                                  \
+    T##txn##CCR##tchn = ccr0;                               \
+    T##txn##CCTL##tchn = OUTMOD_7;                          \
+    P##px##DS |= BIT##py
+#endif
+
 // prepares channels 0, 1 and 2 on TA0
 void prepareMotorPWMs(uint32_t ccr0) {
-    // Channel 1 Pin (1.2)
-    P1DIR |= BIT2;                                  // Set timer CCR1 goto pin as output
-    P1SEL |= BIT2;                                  // Set the pin as timer CCR1 output
-    TA0CCR1 = 0;                                    // Modulate the PWM at 0%
-    TA0CCTL1 = OUTMOD_7;
-    
+    enablePinAsTimerOutput(1,2, A0, 1, 0);
     // Channel 2 Pin (1.3)
-    P1DIR |= BIT3;                                  // Set timer CCR1 goto pin as output
-    P1SEL |= BIT3;                                  // Set the pin as timer CCR1 output
-    TA0CCR2 = 0;                                    // Modulate the PWM at 0%
-    TA0CCTL2 = OUTMOD_7;
+    enablePinAsTimerOutput(1,3, A0, 2, 0);
 
-    TA0CTL = TASSEL__ACLK | ID__1 | MC__UP | TACLR; // Set clock configuration and clear it
-    TA0CCR0 = ccr0;                           // Set clock width
+    enableTimer(A0, ccr0);
 }
 
 // should be from 0 to 100
